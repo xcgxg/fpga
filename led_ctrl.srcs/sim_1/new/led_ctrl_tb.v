@@ -2,14 +2,22 @@
 `define CNT_MAX_1HZ (50_000)
 `define CNT_MAX_1HZ_ON (12_500)
 
+`define TIME_UNIT_MS (1)
+
 
 module led_ctrl_tb();
    reg clk, reset_n;
    wire led;
 
-   led_ctrl0 led_ctrl0_i(clk, reset_n, led);
-   defparam led_ctrl0_i.CNT_MAX_1HZ = `CNT_MAX_1HZ;
-   defparam led_ctrl0_i.CNT_MAX_1HZ_ON = `CNT_MAX_1HZ_ON;
+   // led_ctrl0 led_ctrl0_i(clk, reset_n, led);
+   // defparam led_ctrl0_i.CNT_MAX_1HZ = `CNT_MAX_1HZ;
+   // defparam led_ctrl0_i.CNT_MAX_1HZ_ON = `CNT_MAX_1HZ_ON;
+
+   // led_ctrl1 led_ctrl1_i(clk, reset_n, led);
+   // defparam led_ctrl1_i.TIME_UNIT_MS = `TIME_UNIT_MS;
+
+   led_ctrl2 led_ctrl2_i(clk, reset_n, led);
+   defparam led_ctrl2_i.TIME_UNIT_MS = `TIME_UNIT_MS;
 
    initial clk = 1;
 
