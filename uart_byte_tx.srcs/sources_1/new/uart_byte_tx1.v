@@ -1,30 +1,24 @@
 `timescale 1ns / 1ps
 `define MCNT_BAUD (5208)
-`define MCNT_DLY (50_000_000)
+`define BAUD (9600)
+`define MCNT_FREQ (50_000_000)
 
-module uart_byte_tx(clk, reset_n, data, uart_tx, led);
+module uart_byte_tx1(clk, reset_n, data, send_go, uart_tx, tx_done);
 
-   input clk, reset_n;
+   input clk, reset_n, send_go;
    input [7:0] data;
-   output reg uart_tx, led;
+   output reg uart_tx, tx_done;
 
-   parameter MCNT_BAUD = `MCNT_BAUD;
-   parameter MCNT_DLY = `MCNT_DLY;
+   wire w_tx_done;
 
-   // Delay counter
-   reg [25:0] delay_count;
 
-   always @(posedge clk or negedge reset_n) begin
-      if (!reset_n)
-         delay_count <= 0;
-      else if (delay_count == MCNT_DLY)
-         delay_count <= 1'd1;
-      else
-         delay_count <= delay_count + 1'd1;
-   end
+   parameter BAUD = `BAUD;
+   parameter MCNT_FREQ = `MCNT_FREQ;
+   parameter MCNT_BAUD = MCNT_FREQ / BAUD;
 
-   // Baud counter, 9600, 1/9600 s * 50MHz = 5208, 0001 010 001 011 000
-   reg [12:0]baud_div_cnt;
+
+   // Baud counter, 9600, 1/9600 s * 50MHz = 5208, 001 010 001 011 000
+   reg [31:0]baud_div_cnt;
    reg en_baud_cnt;
 
    always @(posedge clk or negedge reset_n) begin
@@ -57,13 +51,7 @@ module uart_byte_tx(clk, reset_n, data, uart_tx, led);
    reg [7:0] r_data;
 
    always @(posedge clk or negedge reset_n) begin
-      // if (!reset_n)
-      //    r_data <= 0;
-      // else if (delay_count == MCNT_DLY)
-      //    r_data <= data;
-      // else
-      //    r_data <= r_data;
-      if (delay_count == MCNT_DLY)
+      if (send_go)
          r_data <= data;
    end
 
@@ -90,21 +78,19 @@ module uart_byte_tx(clk, reset_n, data, uart_tx, led);
       end
    end
 
-   // Led flip
    always @(posedge clk or negedge reset_n) begin
       if (!reset_n)
-         led <= 1'd0;
-      else if ((bit_cnt == 9) && (baud_div_cnt == MCNT_BAUD))
-         led <= !led;
+         en_baud_cnt <= 1'd0;
+      else if (send_go)
+         en_baud_cnt <= 1'd1;
+      else if (w_tx_done)
+         en_baud_cnt <= 1'd0;
    end
 
-   always @(posedge clk or negedge reset_n) begin
-      if (!reset_n)
-         en_baud_cnt <= 1'd0;
-      else if (delay_count == (MCNT_DLY - 1))
-         en_baud_cnt <= 1'd1;
-      else if ((bit_cnt == 9) && (baud_div_cnt == MCNT_BAUD))
-         en_baud_cnt <= 1'd0;
+   always @(posedge clk) begin
+      tx_done = w_tx_done;
    end
+
+   assign w_tx_done = (bit_cnt == 9) && (baud_div_cnt == MCNT_BAUD);
 
 endmodule
